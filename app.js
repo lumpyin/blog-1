@@ -65,12 +65,22 @@ const serverHandle = (req,res)=> {
         
 
         //handle user router
-        const userData = handleUserRouter(req,res);
-        if(userData){
-            res.end(
-                JSON.stringify(userData)
-            )
-            return;
+        // const userData = handleUserRouter(req,res);
+        // if(userData){
+        //     res.end(
+        //         JSON.stringify(userData)
+        //     )
+        //     return;
+        // }
+
+        const userRouter = handleUserRouter(req,res);
+        if(userRouter){
+            userRouter.then(userData => {
+                res.end(
+                    JSON.stringify(userData)
+                )
+            })
+            return 
         }
 
         //404
