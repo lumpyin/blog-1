@@ -1,27 +1,28 @@
 
 const {login} = require('../controller/user');
 const {SucessModel,ErrorModel} = require('../model/resModel');
+const {set} = require('../db/redis');
 
-const getCookieExpires = ()=>{
-    const d = new Date();
-    d.setTime(d.getTime() + (24 * 60 * 60 * 1000));
-    return d.toGMTString();
-}
+
 
 const handleUserRouter= (req,res)=> {
     const method = req.method;
    
 
     //login
-    if(method === 'GET' && req.path === '/api/user/login'){
-        //const {username,password} = req.body;
-        const {username,password} = req.query;
+    if(method === 'POST' && req.path === '/api/user/login'){
+        const {username,password} = req.body;
+        //const {username,password} = req.query;
         const result = login(username,password);
 
         return result.then(data => {
             if(data.username){
+                //set up sesssion
+                req.session.username = data.username;
+                req.session.realName = data.realName;
+                //sync with redis
+                set(req.sessionId,req.session);
 
-                res.setHeader('Set-Cookie',`username=${data.username}; path=/; httpOnly; expires=${getCookieExpires()}`)
                 return new SucessModel()
             }
             return new ErrorModel('login failed');
@@ -30,14 +31,16 @@ const handleUserRouter= (req,res)=> {
     }
    
     //login test
-    if(method === 'GET' && req.path === '/api/user/login-test'){
-        if(req.cookie.username){
-            return new Promise.resolve(SucessModel({
-                username:req.cookie.username
-            }));
-        }
-        return Promise.resolve(new ErrorModel('not login'));
-    }
+    // if(method === 'GET' && req.path === '/api/user/login-test'){
+    //     if(req.session.username){
+    //         return new Promise.resolve(
+    //             new SucessModel({
+    //               session:req.session
+    //             })
+    //         );
+    //     }
+    //     return Promise.resolve(new ErrorModel('not login'));
+    // }
 }
 
 module.exports = handleUserRouter;
